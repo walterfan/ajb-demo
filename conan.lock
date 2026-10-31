@@ -1,0 +1,12 @@
+{
+    "version": "0.5",
+    "requires": [
+        "gtest/1.18.0#e2507fc4efe2ec9e2db9e5c91eefab9f%1786446847.733",
+        "ftxui/7.0.3#419319b54532623b32d051ea91b5b53c%1786364916.822"
+    ],
+    "build_requires": [
+        "cmake/4.3.2#c740c22f711eb5ef0cec51c40b84657b%1776934625.055"
+    ],
+    "python_requires": [],
+    "config_requires": []
+}
