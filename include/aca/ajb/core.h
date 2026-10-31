@@ -29,9 +29,9 @@ struct Config {
   std::string scenario = "phased";
   uint32_t seed = 42;
   int small_ms = 20, large_ms = 150;
-  int min_ms = 20, initial_ms = 60, max_ms = 200;
-  int network_base_ms = 30, jitter_ms = 80;
-  int burst_jitter_ms = 20, burst_extra_ms = 120, reorder_extra_ms = 70;
+  int min_ms = 40, initial_ms = 60, max_ms = 200;
+  int network_base_ms = 100, jitter_ms = 120;
+  int burst_jitter_ms = 30, burst_extra_ms = 160, reorder_extra_ms = 100;
   void validate() const;
   bool operator==(const Config&) const = default;
 };

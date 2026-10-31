@@ -78,3 +78,7 @@ __pycache__/
 
 # Hand-written project build entry point
 !/Makefile
+
+# Documentation build and virtual environment
+/doc/_build/
+/.venv/

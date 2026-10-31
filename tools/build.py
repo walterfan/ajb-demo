@@ -32,8 +32,8 @@ def flag(name, default="ON"):
 def main():
     action = sys.argv[1] if len(sys.argv) == 2 else "help"
     if action == "help":
-        print("make deps doctor build start compare test fixtures fetch-speech clean asan tsan")
-        print("INPUT=... OUT=out SCENARIO=phased SEED=42 ARGS='...' ")
+        print("make deps doctor build start compare test fixtures fetch-speech clean asan tsan doc")
+        print("INPUT=assets/real/mandarin.wav OUT=out SCENARIO=phased SEED=42 ARGS='...' ")
         print("MEDIA=OFF TUI=OFF TESTS=ON OFFLINE=ON PROFILE_HOST=default")
         return
     if action == "clean":
@@ -146,17 +146,16 @@ def main():
     else:
         if not media:
             raise ValueError("This action requires MEDIA=ON")
-        source = os.environ.get("INPUT", "")
+        source = os.environ.get("INPUT") or "assets/real/mandarin.wav"
         fixture = ROOT / "assets" / "speech.wav"
-        if action == "fixtures" or not source:
+        if action == "fixtures":
             fixture.parent.mkdir(exist_ok=True)
-            if action == "fixtures" or not fixture.exists():
-                execute([binary, "--generate-fixture", fixture])
+            execute([binary, "--generate-fixture", fixture])
         if action != "fixtures":
             extras = shlex.split(os.environ.get("ARGS", ""))
             ui_args = [] if any(x in extras for x in ("--ui", "--tui", "--no-tui")) else [
                 "--ui", "auto" if action == "start" else "plain"]
-            execute([binary, "--input", source or fixture,
+            execute([binary, "--input", source,
                      "--output-dir", os.environ.get("OUT", "out"),
                      "--scenario", os.environ.get("SCENARIO", "phased"),
                      "--seed", os.environ.get("SEED", "42"),

@@ -56,8 +56,14 @@ TEST(Network, NumericDelaysControlEachPreset) {
     }
   }
 }
-TEST(Network, DefaultPhasedDelaysMatchTheOriginalTrace) {
-  auto trace = make_network(16 * kRate, Config{});
+TEST(Network, ExplicitOriginalProfileRemainsReproducible) {
+  Config c;
+  c.network_base_ms = 30;
+  c.jitter_ms = 80;
+  c.burst_jitter_ms = 20;
+  c.burst_extra_ms = 120;
+  c.reorder_extra_ms = 70;
+  auto trace = make_network(16 * kRate, c);
   for (const auto& [index, expected] :
        std::vector<std::pair<size_t, int>>{{0, 30},
                                            {499, 30},
@@ -97,6 +103,8 @@ TEST(Network, ValidatesActiveDelayBoundsAndIntegerBase) {
   EXPECT_THROW(c.validate(), std::runtime_error);
   c = {};
   c.scenario = "burst";
+  c.burst_jitter_ms = 20;
+  c.burst_extra_ms = 120;
   c.network_base_ms = 860;
   EXPECT_NO_THROW(c.validate());  // 860+20+120=1000.
   c.burst_extra_ms = 121;
@@ -150,6 +158,7 @@ TEST(Buffer, StartupReorderingPreservesFirstFrame) {
 }
 TEST(Buffer, SameTimeArrivalPrecedesOutput) {
   Config c;
+  c.network_base_ms = 30;
   Pcm input(2 * kFrame, 1000);
   auto trace = make_network(input.size(), c);
   trace[1].arrival = ms(100);  // Startup=90, second deadline=100.
@@ -266,6 +275,7 @@ TEST(Display, EscapesTerminalControls) {
 TEST(Metrics, HandCalculatedConstantQueueAndEndDelay) {
   Config c;
   c.scenario = "constant";
+  c.network_base_ms = 30;
   Pcm input(2 * kFrame, 1200);
   auto r = simulate(input, make_network(input.size(), c), c, false, 20);
   EXPECT_DOUBLE_EQ(r.summary.startup_ms, 90);

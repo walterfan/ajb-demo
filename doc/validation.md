@@ -1,4 +1,8 @@
-# 演示验收记录
+# 验收记录
+
+以下为既有功能的历史验证记录。历史网络参数为基础延迟 30ms、抖动上限 80ms、
+突发背景抖动 20ms、突发附加延迟 120ms、乱序附加延迟 70ms，自适应下限 20ms。
+当前试听默认值及其新结果见下方“增强后的默认试听”。
 
 2026-10-31，macOS arm64，AppleClang 21，CMake 4.4.3，Conan 2.28.1。
 系统媒体来自 Homebrew `gstreamer 1.28.8_1`：core/app/audio 均为 1.28.8，
@@ -6,7 +10,7 @@ prefix 为 `/opt/homebrew/Cellar/gstreamer/1.28.8_1`，插件目录为其
 `lib/gstreamer-1.0`。Conan 使用现有 default profiles，host C++20；
 FTXUI 7.0.3、GoogleTest 1.18.0 的确切 recipe revisions 见 `conan.lock`。
 
-## 默认场景结果
+## 合成样本的历史场景结果
 
 固定 seed 的 30 秒合成样本，`phased`，seed=42，预算使用默认配置。
 以下数值来自 `make compare` 的 `summary.csv`；延迟包含共同 40ms 前视，
@@ -23,8 +27,9 @@ FTXUI 7.0.3、GoogleTest 1.18.0 的确切 recipe revisions 见 `conan.lock`。
 自适应在默认 phased 轨迹下补偿少于 fixed-20，平均等待低于 fixed-150。
 
 ```sh
-make compare SCENARIO=phased SEED=42 OUT=out/accept-phased OFFLINE=ON
-make compare SCENARIO=constant SEED=42 OUT=out/accept-constant OFFLINE=ON
+make fixtures OFFLINE=ON
+make compare INPUT=assets/speech.wav SCENARIO=phased SEED=42 OUT=out/accept-phased OFFLINE=ON ARGS='--network-delay-ms 30 --jitter-ms 80 --burst-jitter-ms 20 --burst-delay-ms 120 --reorder-delay-ms 70 --min-delay-ms 20'
+make compare INPUT=assets/speech.wav SCENARIO=constant SEED=42 OUT=out/accept-constant OFFLINE=ON ARGS='--network-delay-ms 30 --min-delay-ms 20'
 make test OFFLINE=ON
 ```
 
@@ -63,7 +68,7 @@ make start INPUT=assets/real/mandarin.wav
 - PTY 检查包括总览/机制/结果、轨道切换、暂停、10ms/事件单步、时间定位、
   真实事件教学暂停、快照、参数重跑、输入快捷键隔离、120×36/80×24/过小终端、
   ASCII/中文、q/Ctrl-C 和终端 ECHO/ICANON 恢复。完整 TSan TUI 也执行 PTY 检查。
-- 使用仓库真实语音 `assets/real/speech.wav` 的前三秒，完成实际 `make start`
+- 历史验证使用当时的三秒真实语音样本（现仓库提供 `assets/real/mandarin.wav`），完成实际 `make start`
   有声四轨导览、手动重播/暂停/单步/导出和 seed 改为43后重跑；另验证纯文本
   四轨试听。短录音用于操作和设备验证，恶化/恢复效果由上述30秒实验验证。
 - 重定向 `make start` 自动完成无声卡离线渲染，未输出 ANSI 或等待输入；显式
@@ -76,8 +81,6 @@ make start INPUT=assets/real/mandarin.wav
   构建 Conan 依赖，验证了完整/UI关闭/测试关闭/核心图及后续缓存命中。
 - 缺失 profile 明确失败；隔离临时 GStreamer 注册表模拟缺失插件，doctor 明确
   指出 filesrc 缺失；临时副本验证 clean 仅删除本演示生成目录。
-- 根工程 `make verify` 通过：62 项原测试、样本生成及端到端演示。根工程不依赖
-  Conan 或 GStreamer；根构建未更改。
 
 本次补充单策略选择：新增集成用例验证 fixed-20、fixed-150、fixed-80、adaptive
 每轮只导出一份策略结果，且与相同配置的对比结果一致；元数据记录模式及固定
@@ -123,3 +126,28 @@ python3 tools/tui_smoke.py build/<configuration>/cmake/ajb_demo
 # 也可显式提供真实语音输入，测试仍保持静音：
 python3 tools/tui_smoke.py build/<configuration>/cmake/ajb_demo /path/to/speech.wav
 ```
+
+## 增强后的默认试听
+
+2026-10-31，使用仓库的 45 秒 `assets/real/mandarin.wav`，`phased`、seed=42。
+网络默认值调整为基础延迟 100ms、抖动上限 120ms、突发背景抖动 30ms、突发附加
+延迟 160ms、乱序附加延迟 100ms；自适应预算下限为 40ms，初始/上限仍为 60/200ms。
+小固定/大固定预算仍为 20/150ms。
+
+| 策略 | 启动 ms | 平均缓冲等待 ms | PLC ms | 迟到包 |
+| --- | ---: | ---: | ---: | ---: |
+| fixed-20 | 160 | 61.47 | 3200 | 320 |
+| fixed-150 | 290 | 183.20 | 0 | 0 |
+| adaptive | 200 | 109.66 | 616 | 53 |
+
+这是离线渲染的测量结果；PLC 时长表示缺失样本的静音补偿量，不是主观音质评分。
+更强的抖动增加小固定的断续，自适应仍保留部分欠载；大固定更连续，但等待更长。
+正常恢复阶段的源包延迟回到 100ms，便于观察自适应如何降低水位。
+
+```sh
+make compare OFFLINE=ON OUT=out/enhanced-default-check
+make start
+```
+
+38 项测试通过，原网络参数的固定 seed 轨迹仍单独验证；同刻到达边界和手算延迟
+测试显式设置其基线参数，避免把旧默认值混入新试听配置。

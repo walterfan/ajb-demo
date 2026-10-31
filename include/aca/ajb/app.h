@@ -10,7 +10,7 @@
 namespace aca::ajb {
 struct Options {
   Config config;
-  std::filesystem::path input = "assets/speech.wav", output = "out", fixture;
+  std::filesystem::path input = "assets/real/mandarin.wav", output = "out", fixture;
   std::string mode = "compare", ui = "plain";
   int fixed_ms = 20;
   bool play = false, ascii = false, no_color = false, help = false;

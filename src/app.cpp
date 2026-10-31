@@ -148,13 +148,13 @@ Options parse_options(const std::vector<std::string>& args) {
 }
 std::string help_text() {
   return R"(AJB Lab: deterministic jitter-buffer experiment
-  --input FILE.wav --output-dir DIR
+  --input FILE.wav --output-dir DIR (default input: assets/real/mandarin.wav)
   --mode compare|fixed|adaptive  --buffer-ms 20
   --scenario constant|jitter|burst|reorder|loss|phased --seed 42
-  --network-delay-ms 30 --jitter-ms 80 --burst-jitter-ms 20
-  --burst-delay-ms 120 --reorder-delay-ms 70
+  --network-delay-ms 100 --jitter-ms 120 --burst-jitter-ms 30
+  --burst-delay-ms 160 --reorder-delay-ms 100
   --small-buffer-ms 20 --large-buffer-ms 150
-  --min-delay-ms 20 --initial-delay-ms 60 --max-delay-ms 200
+  --min-delay-ms 40 --initial-delay-ms 60 --max-delay-ms 200
   --ui auto|tui|plain  (default plain; aliases --tui / --no-tui)
   --play             text audition, only with plain UI
   --ascii --no-color --help

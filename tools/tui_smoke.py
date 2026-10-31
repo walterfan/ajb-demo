@@ -28,7 +28,7 @@ def main():
     env["TERM"] = "xterm-256color"
     env["NO_COLOR"] = "1"
     run_root = root / "out" / ("pty-" + str(os.getpid()))
-    source = Path(sys.argv[2]).resolve(strict=True) if len(sys.argv) > 2 else root / "assets/speech.wav"
+    source = Path(sys.argv[2]).resolve(strict=True) if len(sys.argv) > 2 else root / "assets/real/mandarin.wav"
     process = subprocess.Popen([str(binary), "--tui", "--ascii",
         "--input", str(source),
         "--output-dir", str(run_root)],
@@ -274,7 +274,7 @@ def main():
         assert_text("base delay ms")
         assert_text("base delay ms (base one-way delay)")
         assert_text("burst jitter ms (burst background jitter)")
-        set_number(900)  # phased maximum would be 900+20+120=1040
+        set_number(900)  # phased maximum would be 900+30+160=1090
         send(b"\x1bOP")  # F1 Buffer
         transcript.clear()
         send(b"\x1bOQ")  # F2 preserves the pending base
@@ -288,7 +288,7 @@ def main():
         send(b"p")
         transcript.clear()
         send(b"\x1bOQ")
-        assert_network_base(30)  # cancellation restored the current experiment
+        assert_network_base(100)  # cancellation restored the current experiment
         # Choose constant, then fill all five network timing fields.
         send(b"\x1b[Z")  # Shift-Tab from base to the scene dropdown
         send(b"\r")
