@@ -1,0 +1,81 @@
+.gitignore
+  s_7fec0aeb8a0a8d::t_6feb36da370063 69-80
+CMakeLists.txt
+  s_b57bbab053a910::t_7b24117f0c83c6 1-85
+Makefile
+  s_b57bbab053a910::t_73bb82830fcde9 1-26
+README.md
+  s_b57bbab053a910::t_e34133700469e4 1-366
+VALIDATION.md
+  s_b57bbab053a910::t_302c731639e1c4 1-125
+assets/real/ATTRIBUTION.md
+  s_ae880b94fdc750::t_b25532b20be813 1-13
+conan.lock
+  s_b57bbab053a910::t_3fc2d722a9fc8a 1-12
+conanfile.py
+  s_b57bbab053a910::t_b91f4cb6d114ae 1-40
+include/aca/ajb/app.h
+  s_ae880b94fdc750::t_c3a5d7641d5235 1-38
+include/aca/ajb/media.h
+  s_ae880b94fdc750::t_a3a9b40711acc0 1-35
+src/core.cpp
+  s_ae880b94fdc750::t_33d3dec8d882c3 1-614
+src/main.cpp
+  s_ae880b94fdc750::t_ef9f53fd0862b0 1-50
+src/media.cpp
+  s_ae880b94fdc750::t_99d5077adb01e8 1-412
+src/replay.cpp
+  s_ae880b94fdc750::t_c76f2d57bab2d4 1-145
+src/tui.cpp
+  s_697f83df102742::t_11b223fd950a7f 1-1058
+tests/app_test.cpp
+  s_ae880b94fdc750::t_fae84e766e79aa 1-167
+tests/core_test.cpp
+  s_ae880b94fdc750::t_f53eb5915652a4 1-325
+tests/helpers.h
+  s_ae880b94fdc750::t_09e5d14da22457 1-53
+tests/replay_test.cpp
+  s_ae880b94fdc750::t_ec9b4234c620fd 1-130
+tools/tui_smoke.py
+  s_697f83df102742::t_a854b918d53aca 1-365
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "88c92dc81863ed12191bb6294b0b928ddc9cd832",
+  "prompts": {},
+  "sessions": {
+    "s_697f83df102742": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1801c-fe89-7970-b83c-77d0c5116594",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Walter Fan <walter.fan@zoom.us>"
+    },
+    "s_7fec0aeb8a0a8d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19248-49b2-7490-9f73-7d0bc3689b68",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Walter Fan <walter.fan@zoom.us>"
+    },
+    "s_ae880b94fdc750": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18fd9-6ee5-7822-99ab-33f316091452",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Walter Fan <walter.fan@zoom.us>"
+    },
+    "s_b57bbab053a910": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19244-67c4-7ad3-9e27-775d835139bc",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Walter Fan <walter.fan@zoom.us>"
+    }
+  }
+}
