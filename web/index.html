@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="在同一网络轨迹下试听、比较和探索自适应抖动缓冲。">
+  <title>Jitter Buffer Lab · 自适应抖动缓冲实验室</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="实验室首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong>Jitter Buffer <span>Lab</span></strong><span class="version">AJB / 01</span></a>
+    <div class="header-right"><span class="local-indicator"><i></i> 本地音频实验室</span><a href="https://github.com/walterfan/ajb-demo" target="_blank" rel="noreferrer">项目源码 ↗</a></div>
+  </header>
+  <div class="workspace">
+    <aside class="sidebar">
+      <form id="settings">
+        <div class="section-heading"><h2>实验设置</h2><button class="text-button" id="reset" type="button">恢复默认 ↺</button></div>
+        <div class="source-card"><span class="file-icon" aria-hidden="true">♫</span><div><strong id="source-name">mandarin.wav</strong><small id="source-meta">正在读取音频…</small></div><span class="source-tag">WAV</span></div>
+        <label class="field scenario-field"><span>网络场景</span><select name="scenario"><option value="phased">分阶段 · 平稳 → 抖动 → 突发 → 恢复</option><option value="constant">恒定延迟 · 基线</option><option value="jitter">随机抖动</option><option value="burst">周期性突发</option><option value="reorder">乱序到达</option><option value="loss">随机丢包 · 约 5%</option></select></label>
+        <div class="form-group-heading"><h3>网络条件</h3><span>毫秒 / ms</span></div>
+        <div class="field-grid">
+          <label class="field"><span>基础延迟</span><input name="network_base_ms" type="number" min="0" max="1000" step="1" required></label>
+          <label class="field"><span>随机抖动上限</span><input name="jitter_ms" type="number" min="0" max="1000" step="10" required></label>
+          <label class="field"><span>突发背景抖动</span><input name="burst_jitter_ms" type="number" min="0" max="1000" step="10" required></label>
+          <label class="field"><span>突发附加延迟</span><input name="burst_extra_ms" type="number" min="0" max="1000" step="1" required></label>
+          <label class="field"><span>乱序附加延迟</span><input name="reorder_extra_ms" type="number" min="0" max="1000" step="1" required></label>
+          <label class="field"><span>随机种子</span><input name="seed" type="number" min="0" max="4294967295" step="1" required></label>
+        </div>
+        <label class="field"><span>欠载策略（Underrun policy）</span><select name="underrun_policy"><option value="plc">PLC · 补静音并推进源位置</option><option value="rebuffer">Rebuffer · 等待蓄水并保留源位置</option></select></label>
+        <div class="field-grid">
+          <label class="field"><span>恢复水位下限（Resume level, ms）</span><input name="rebuffer_resume_ms" type="number" min="40" max="500" step="10" required></label>
+          <label class="field"><span>单次等待上限（Wait timeout, ms）</span><input name="rebuffer_timeout_ms" type="number" min="10" max="2000" step="10" required></label>
+        </div>
+        <p class="hint">Rebuffer 恢复水位取上述下限与当前目标水位的较大值；总等待最多 5 秒。保持场景和种子相同，切换策略后重新运行即可比较。</p>
+        <details class="buffer-settings" open><summary>缓冲策略预算（Extra jitter budget）<span>ms</span></summary><div class="field-grid">
+          <label class="field"><span>小固定额外预算（Small fixed extra budget）</span><input name="small_ms" type="number" min="0" max="460" step="10" required><output id="small-target" class="target-preview" aria-live="polite"></output></label>
+          <label class="field"><span>大固定额外预算（Large fixed extra budget）</span><input name="large_ms" type="number" min="0" max="460" step="10" required><output id="large-target" class="target-preview" aria-live="polite"></output></label>
+          <label class="field"><span>自适应下限（Min budget）</span><input name="min_ms" type="number" min="0" max="460" step="10" required></label>
+          <label class="field"><span>自适应初始值（Initial budget）</span><input name="initial_ms" type="number" min="0" max="460" step="10" required></label>
+          <label class="field"><span>自适应上限（Max budget）</span><input name="max_ms" type="number" min="0" max="460" step="10" required></label>
+        </div><p class="budget-note">预算不含统一的 40ms 算法前视（Excludes the shared 40ms lookahead）。</p></details>
+        <div class="sidebar-note"><span aria-hidden="true">◎</span><p>三种策略共用同一段语音和网络轨迹，便于公平比较。</p></div>
+        <button class="run-button" id="run" type="submit"><span aria-hidden="true">▶</span> 运行实验</button>
+        <p class="form-footnote">参数修改后，重新运行即可试听</p>
+      </form>
+    </aside>
+    <main>
+      <div class="page-heading"><div><p class="eyebrow">ADAPTIVE PLAYOUT / INTERACTIVE EXPERIMENT</p><h1>听见抖动，理解缓冲<span>。</span></h1><p class="subtitle">同一段语音，三种缓冲策略。听取舍，也看变化。</p></div><div class="run-indicator" id="run-status" role="status" aria-live="polite"><i></i><span>准备实验</span></div></div>
+      <div id="error" class="error-banner" role="alert" hidden></div>
+      <section class="player-panel panel" aria-labelledby="listen-heading">
+        <div class="panel-top"><div class="panel-title"><span class="section-number">01</span><h2 id="listen-heading">试听对比</h2></div><span class="muted" id="player-hint">切换策略保留实验时刻</span></div>
+        <aside class="lookahead-explainer" aria-label="缓冲预算与前视说明"><strong>目标水位包含 40ms 算法前视（Lookahead）</strong><p>前视是在处理当前声音前，先缓存后面一小段已到达的音频，供波形匹配和平滑拼接。本项目所有策略统一预留 40ms：例如 <b>20ms 额外预算 + 40ms 前视 = 60ms 目标水位</b>。下方的平均等待是实际测量值，并不保证等于预算或目标水位。</p></aside>
+        <div class="track-selector" role="group" aria-label="试听轨道"><button type="button" data-track="0" class="track-button small" disabled><i></i>小固定缓冲</button><button type="button" data-track="1" class="track-button large" disabled><i></i>大固定缓冲</button><button type="button" data-track="2" class="track-button adaptive active" disabled><i></i>自适应缓冲<span class="tag">ADAPTIVE</span></button><button type="button" data-track="reference" class="track-button reference" disabled>♫ 原始语音</button></div>
+        <div class="waveform-wrap"><canvas id="waveform" aria-label="源语音波形与播放位置"></canvas><div class="wave-label">源语音波形 · 点击定位</div><div class="phase-labels" id="phase-labels"><span>平稳</span><span>抖动</span><span>突发</span><span>恢复</span></div></div>
+        <div class="transport"><div class="playback-controls"><button id="back" class="icon-button" type="button" aria-label="后退五秒" disabled>↶<small>5</small></button><button id="play" class="play-button" type="button" aria-label="播放" disabled>▶</button><button id="forward" class="icon-button" type="button" aria-label="前进五秒" disabled>↷<small>5</small></button><span class="timecode"><strong id="current-time">00:00.00</strong><span>/</span><span id="duration">00:45.00</span></span></div><div class="transport-right"><label class="loop-control"><input id="loop" type="checkbox"> 循环试听</label><label class="volume-control"><span aria-hidden="true">◖))</span><input id="volume" type="range" min="0" max="100" value="75" aria-label="音量"></label><a id="wav-download" class="download-link" hidden download>下载 WAV ↓</a></div></div>
+        <input id="seek" type="range" min="0" max="45" step="0.01" value="0" aria-label="实验时间线" disabled>
+        <audio id="audio" preload="auto"></audio>
+      </section>
+      <div class="comparison-heading"><h2>三种策略，三种取舍</h2><span>整轮统计 · 点击卡片切换试听</span></div>
+      <section class="comparison-grid" id="comparison" aria-label="整轮策略对比"></section>
+      <section class="charts-grid" aria-label="实验曲线">
+        <div class="panel chart-panel"><div class="panel-top"><div class="panel-title"><span class="section-number">02</span><h2>缓冲水位</h2></div><span class="unit">ms</span></div><div class="chart-legend"><span class="legend-goal">目标水位（Budget + 40ms lookahead）</span><span class="legend-level">连续可播放水位（Contiguous playable audio）</span></div><canvas id="buffer-chart" aria-label="目标水位与实际连续水位曲线"></canvas><p id="buffer-readout" class="chart-readout">生成结果后，点击曲线可定位试听</p></div>
+        <div class="panel chart-panel"><div class="panel-top"><div class="panel-title"><span class="section-number">03</span><h2>延迟构成</h2></div><span class="unit">ms</span></div><div class="chart-legend"><span class="legend-network">播放源网络延迟</span><span class="legend-wait">缓冲等待</span><span class="legend-total">发送至输出</span></div><canvas id="delay-chart" aria-label="同一批播放源的网络、等待和总延迟曲线"></canvas><p id="delay-readout" class="chart-readout">整轮曲线 · 游标跟随当前音频播放位置</p></div>
+      </section>
+      <section class="details-grid">
+        <div class="panel state-panel"><div class="panel-top"><div class="panel-title"><span class="section-number">04</span><h2>此刻发生了什么</h2></div><span id="action" class="action-badge">等待运行</span></div><div class="instant-grid"><div><span>连续水位</span><strong id="instant-level">—</strong></div><div><span>目标水位</span><strong id="instant-target">—</strong></div><div><span>源位置</span><strong id="instant-source">—</strong></div><div><span>累计补静音</span><strong id="instant-plc">—</strong></div><div><span>重新缓冲（Rebuffer）</span><strong id="instant-rebuffer">—</strong></div></div><p id="action-explanation" class="explanation">播放或拖动时间线，探索水位变化与播放决策。</p></div>
+        <div class="panel events-panel"><div class="panel-top"><div class="panel-title"><h2>关键事件</h2></div><span class="muted">截至当前游标</span></div><ol id="events"><li class="empty-events">播放或定位后，显示已发生的目标调整和丢弃事件。</li></ol></div>
+      </section>
+      <footer class="page-footer"><span>48 kHz · 单声道 · 每帧 10ms <i>•</i> 延迟含 40ms 算法前视，不含设备实际出声延迟</span><a id="csv-download" hidden download>下载整轮汇总 CSV ↗</a></footer>
+    </main>
+  </div>
+</body>
+</html>

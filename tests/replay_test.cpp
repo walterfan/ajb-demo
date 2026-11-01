@@ -127,4 +127,21 @@ TEST(Replay, DelayWindowContainsOnlyTheLastFiveSeconds) {
       EXPECT_LE(point.time, ms(5600));
     }
 }
+TEST(Replay, RebufferKeepsCursorAndCountersConsistent) {
+  Config c;
+  c.scenario = "constant";
+  c.underrun_policy = "rebuffer";
+  Pcm input(50 * kFrame, 1000);
+  auto trace = make_network(input.size(), c);
+  trace[10].arrival = ms(400);
+  auto result = simulate(input, trace, c, false, 20);
+  for (const auto& tick : result.ticks) {
+    if (tick.action != "rebuffer") continue;
+    auto view = view_at(result, {tick.time});
+    EXPECT_EQ(view.source_cursor, tick.source);
+    EXPECT_EQ(view.tick.cumulative.rebuffer_samples,
+              tick.cumulative.rebuffer_samples);
+    EXPECT_TRUE(std::isnan(delays_at(result, {tick.time}).tick.delays.wait_ms));
+  }
+}
 }  // namespace aca::ajb

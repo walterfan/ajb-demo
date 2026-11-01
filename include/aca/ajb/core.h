@@ -28,6 +28,8 @@ inline double milliseconds(Time value) { return value / 1e6; }
 struct Config {
   std::string scenario = "phased";
   uint32_t seed = 42;
+  std::string underrun_policy = "plc";
+  int rebuffer_resume_ms = 100, rebuffer_timeout_ms = 300;
   int small_ms = 20, large_ms = 150;
   int min_ms = 40, initial_ms = 60, max_ms = 200;
   int network_base_ms = 100, jitter_ms = 120;
@@ -88,6 +90,7 @@ struct Counters {
   uint64_t late = 0, duplicate = 0, overflow = 0, network_lost = 0;
   uint64_t plc_samples = 0, plc_events = 0, plc_ticks = 0;
   uint64_t fast = 0, slow = 0, normal = 0, media_ticks = 0;
+  uint64_t rebuffer_samples = 0, rebuffer_events = 0, rebuffer_timeouts = 0;
 };
 struct Event {
   Time time = 0;

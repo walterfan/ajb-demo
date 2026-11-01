@@ -29,6 +29,13 @@ double mean(const std::vector<double>& values) {
 }  // namespace
 
 void Config::validate() const {
+  if (underrun_policy != "plc" && underrun_policy != "rebuffer")
+    throw std::runtime_error("underrun-policy must be plc or rebuffer");
+  if (rebuffer_resume_ms < 40 || rebuffer_resume_ms > 500 ||
+      rebuffer_resume_ms % 10 || rebuffer_timeout_ms < 10 ||
+      rebuffer_timeout_ms > 2000 || rebuffer_timeout_ms % 10)
+    throw std::runtime_error(
+        "Rebuffer resume must be 40..500ms, timeout 10..2000ms, in 10ms steps");
   if (std::find(kScenarios.begin(), kScenarios.end(), scenario) ==
       kScenarios.end())
     throw std::runtime_error(
@@ -284,7 +291,8 @@ Result simulate(const Pcm& input, const std::vector<Packet>& network,
       kTick;
   result.summary.startup_ms = milliseconds(start);
   Time send_end = static_cast<Time>(input.size()) * 1000000000 / kRate;
-  Time limit = send_end + ms(1000 + 500 + 40 + 2000);
+  Time limit = send_end + ms(1000 + 500 + 40 + 2000 +
+                             (config.underrun_policy == "rebuffer" ? 5000 : 0));
   std::map<size_t, Packet> queue;
   std::set<size_t> received;
   std::vector<uint8_t> played(input.size(), 0);
@@ -299,7 +307,8 @@ Result simulate(const Pcm& input, const std::vector<Packet>& network,
   size_t source = 0, ai = 0, si = 0;
   int target = result.budget_ms;
   double level = 0;
-  bool was_plc = false;
+  bool was_plc = false, rebuffering = false;
+  Time rebuffer_started = 0;
   int16_t previous_output = 0;
   int fade_out = 0, fade_in = 0;
   int16_t fade_start = 0;
@@ -387,6 +396,52 @@ Result simulate(const Pcm& input, const std::vector<Packet>& network,
                                                 kFrame) /
                                     48 -
                                 static_cast<double>(source) / 48);
+    // Waiting emits device-clock silence but does not consume source audio.
+    // A finite per-gap timeout and a 5s total budget handle permanent loss.
+    constexpr uint64_t max_rebuffer_samples = 5 * kRate;
+    if (config.underrun_policy == "rebuffer" && !rebuffering &&
+        continuous < std::min(input.size(), source + kFrame) &&
+        counts.rebuffer_samples < max_rebuffer_samples) {
+      rebuffering = true;
+      rebuffer_started = now;
+      ++counts.rebuffer_events;
+      stretch.reset();
+      event(now, "rebuffer_start", -1, "source_unavailable");
+    }
+    if (rebuffering) {
+      const size_t needed =
+          std::min(input.size() - source,
+                   static_cast<size_t>(std::max(config.rebuffer_resume_ms,
+                                                target + kLookaheadMs)) *
+                       48);
+      const bool ready = continuous - source >= needed;
+      const bool timeout =
+          now - rebuffer_started >= ms(config.rebuffer_timeout_ms) ||
+          counts.rebuffer_samples >= max_rebuffer_samples;
+      if (ready || timeout) {
+        rebuffering = false;
+        if (!ready) ++counts.rebuffer_timeouts;
+        event(now, "rebuffer_end", -1,
+              ready ? "level_recovered" : "timeout_fallback_plc");
+        fade_in = 240;
+      } else {
+        for (int i = 0; i < kFrame; ++i)
+          result.audio.push_back(
+              i < 240 ? static_cast<int16_t>(previous_output * (239 - i) / 240)
+                      : 0);
+        previous_output = 0;
+        was_plc = false;
+        fade_out = 0;
+        counts.rebuffer_samples += kFrame;
+        event(now, "output", -1, "rebuffer");
+        result.ticks.push_back({now, source, 0, target, level, span,
+                                estimator.jitter_ms(), "rebuffer", 0, counts,
+                                waits.empty() ? 0 : wait_sum / waits.size()});
+        targets.push_back(target);
+        levels.push_back(level);
+        continue;
+      }
+    }
     int advance = kFrame;
     std::string action = "normal";
     bool window_ready = continuous - source >= 4 * kFrame;

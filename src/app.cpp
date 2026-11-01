@@ -51,7 +51,8 @@ void write_result(const Result& result, const std::filesystem::path& directory,
   file << "output_ns,source_sample,consumed_samples,target_budget_ms,target_"
           "level_ms,continuous_level_ms,span_ms,jitter_ms,action,concealed_"
           "samples,plc_total_ms,plc_events,wait_mean_ms,delay_samples,played_"
-          "network_ms,buffer_wait_ms,packet_to_output_ms\n";
+          "network_ms,buffer_wait_ms,packet_to_output_ms,rebuffer_total_ms,"
+          "rebuffer_events,rebuffer_timeouts\n";
   for (const auto& t : result.ticks)
     file << t.time << ',' << t.source << ',' << t.advance << ',' << t.target_ms
          << ',' << t.target_ms + kLookaheadMs << ',' << t.level_ms << ','
@@ -59,7 +60,10 @@ void write_result(const Result& result, const std::filesystem::path& directory,
          << t.concealed << ',' << t.cumulative.plc_samples / 48.0 << ','
          << t.cumulative.plc_events << ',' << t.wait_mean_ms << ','
          << t.delays.samples << ',' << t.delays.network_ms << ','
-         << t.delays.wait_ms << ',' << t.delays.playout_ms << '\n';
+         << t.delays.wait_ms << ',' << t.delays.playout_ms << ','
+         << t.cumulative.rebuffer_samples / 48.0 << ','
+         << t.cumulative.rebuffer_events << ','
+         << t.cumulative.rebuffer_timeouts << '\n';
   file.close();
 }
 }  // namespace
@@ -104,6 +108,12 @@ Options parse_options(const std::vector<std::string>& args) {
       options.no_color = true;
     else if (key == "--scenario")
       options.config.scenario = value();
+    else if (key == "--underrun-policy")
+      options.config.underrun_policy = value();
+    else if (key == "--rebuffer-resume-ms")
+      options.config.rebuffer_resume_ms = number<int>(value());
+    else if (key == "--rebuffer-timeout-ms")
+      options.config.rebuffer_timeout_ms = number<int>(value());
     else if (key == "--seed")
       options.config.seed = number<uint32_t>(value());
     else if (key == "--network-delay-ms")
@@ -148,6 +158,8 @@ Options parse_options(const std::vector<std::string>& args) {
 }
 std::string help_text() {
   return R"(AJB Lab: deterministic jitter-buffer experiment
+  --underrun-policy plc|rebuffer (default plc)
+  --rebuffer-resume-ms 100 --rebuffer-timeout-ms 300
   --input FILE.wav --output-dir DIR (default input: assets/real/mandarin.wav)
   --mode compare|fixed|adaptive  --buffer-ms 20
   --scenario constant|jitter|burst|reorder|loss|phased --seed 42
@@ -233,7 +245,8 @@ std::shared_ptr<Experiment> prepare(const Options& options,
                "target_budget_p95_ms,level_mean_ms,level_p95_ms,plc_ms,plc_"
                "events,plc_ticks,late,duplicate,overflow,network_lost,fast_"
                "fraction,slow_fraction,unplayed_source_fraction,played_network_"
-               "mean_ms,packet_to_output_mean_ms\n";
+               "mean_ms,packet_to_output_mean_ms,rebuffer_ms,rebuffer_events,"
+               "rebuffer_timeouts\n";
     for (const auto& r : experiment->results) {
       const auto& s = r.summary;
       const auto& c = s.counters;
@@ -247,13 +260,19 @@ std::shared_ptr<Experiment> prepare(const Options& options,
               << c.duplicate << ',' << c.overflow << ',' << c.network_lost
               << ',' << c.fast / denominator << ',' << c.slow / denominator
               << ',' << s.unplayed_fraction << ',' << s.played_network_mean_ms
-              << ',' << s.packet_to_output_mean_ms << '\n';
+              << ',' << s.packet_to_output_mean_ms << ','
+              << c.rebuffer_samples / 48.0 << ',' << c.rebuffer_events << ','
+              << c.rebuffer_timeouts << '\n';
     }
     summary.close();
     auto metadata = output_file(directory / "experiment.txt");
     metadata << "run=" << experiment->id << "\nmode=" << options.mode
              << "\nfixed_ms=" << options.fixed_ms
              << "\nscenario=" << options.config.scenario
+             << "\nunderrun_policy=" << options.config.underrun_policy
+             << "\nrebuffer_resume_ms=" << options.config.rebuffer_resume_ms
+             << "\nrebuffer_timeout_ms=" << options.config.rebuffer_timeout_ms
+             << "\nrebuffer_limit_ms=5000"
              << "\nseed=" << options.config.seed
              << "\nnetwork_base_ms=" << options.config.network_base_ms
              << "\njitter_ms=" << options.config.jitter_ms
@@ -282,13 +301,16 @@ std::shared_ptr<Experiment> prepare(const Options& options,
 std::string summary_text(const Experiment& experiment) {
   std::ostringstream out;
   out << "run=" << experiment.id << " scenario=" << experiment.config.scenario
-      << " seed=" << experiment.config.seed << "\n"
-      << "policy           startup_ms   wait_mean_ms   PLC_ms   late\n";
+      << " seed=" << experiment.config.seed
+      << " underrun=" << experiment.config.underrun_policy << "\n"
+      << "policy           startup_ms   wait_mean_ms   PLC_ms   Rebuffer_ms  "
+         "late\n";
   for (const auto& r : experiment.results)
     out << std::setw(16) << std::left << r.name << std::fixed
         << std::setprecision(2) << std::setw(13) << r.summary.startup_ms
         << std::setw(15) << r.summary.wait_mean_ms << std::setw(9)
-        << r.summary.counters.plc_samples / 48.0 << r.summary.counters.late
+        << r.summary.counters.plc_samples / 48.0 << std::setw(13)
+        << r.summary.counters.rebuffer_samples / 48.0 << r.summary.counters.late
         << '\n';
   out << "Output: " << display_safe(experiment.directory.string()) << '\n'
       << "Simulation delays include 40ms lookahead; device acoustic latency is "

@@ -12,6 +12,9 @@ namespace aca::ajb {
 TEST(Options, RejectsUnknownAndUnsafeNumbers) {
   for (const auto& args :
        std::vector<std::vector<std::string>>{{"--wat"},
+                                             {"--underrun-policy", "bad"},
+                                             {"--rebuffer-resume-ms", "15"},
+                                             {"--rebuffer-timeout-ms", "0"},
                                              {"--seed", "-1"},
                                              {"--buffer-ms", "nan"},
                                              {"--buffer-ms", "-10"},
@@ -152,7 +155,7 @@ TEST(Experiment, DelayCsvMatchesActualOutputBlocks) {
     std::vector<std::string> cells;
     for (std::string cell; std::getline(line, cell, ',');)
       cells.push_back(cell);
-    ASSERT_EQ(cells.size(), 17u);
+    ASSERT_EQ(cells.size(), 20u);
     EXPECT_EQ(std::stoul(cells[13]), tick.delays.samples);
     if (tick.delays.samples) {
       EXPECT_NEAR(std::stod(cells[14]), tick.delays.network_ms, 1e-8);

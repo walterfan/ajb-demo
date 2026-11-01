@@ -13,6 +13,7 @@
 | `include/aca/ajb/app.h`、`src/app.cpp` | `Options`、`Experiment`、`parse_options`、`prepare` | 参数校验、实验编排、CSV 与快照 |
 | `src/main.cpp`、`src/tui.cpp` | 程序入口、`run_tui` | 命令行模式选择及 FTXUI 交互 |
 | `tools/build.py`、`conanfile.py` | 构建驱动、Conan 配方 | 按配置隔离构建，固定第三方依赖 |
+| `tools/web_server.py`、`web/` | `ExperimentConfig`、`create_app`、浏览器页面 | 校验参数，调用 C++ 渲染，提供音频与可视化 |
 
 推荐阅读顺序：`Config/Packet` → `make_network()` → `DelayEstimator` →
 `simulate()` → `Wsola::process()` → `prepare()` → `view_at()`。
@@ -44,7 +45,9 @@
   记录发送/网络丢失
   处理已到达包：到达 → 去重 → 估计 → 迟到/容量判断 → 按序入队
   起播前：追加静音，记录 startup，进入下一 tick
-  媒体阶段：更新目标 → 计算连续水位/跨度 → 选择 456/480/504
+  媒体阶段：更新目标 → 计算连续水位/跨度
+           → 可选 Rebuffer：冻结源位置并输出等待静音；恢复或超时后继续
+           → 选择 456/480/504
            → WSOLA 或直接输出/PLC → 记录贡献与指标
            → output 事件 → commit 游标 → 移除已消费包
   ↓
@@ -58,7 +61,9 @@
 
 ## WSOLA 的波形与来源追踪
 
-`Wsola::process()` 使用 20ms 重叠窗口和 10ms 合成步长，要求至少 30ms 连续前视；
+原理、示意图及动作选择见 [WSOLA、PLC 与静音帧裁剪](audio-processing.md)。
+
+`Wsola::process()` 使用 20ms 分析片段、10ms 重叠区和合成步长，要求至少 30ms 连续前视；
 调用侧仅在具有 40ms 连续数据时进入该路径。搜索在 0–480 样本范围内以 4 样本
 为步长，对上一块保留的尾部和候选窗口做归一化相关性比较，再线性交叠相加。
 
@@ -68,6 +73,18 @@
 
 游标只按决策中的 `advance` 推进，相关性搜索不提交游标。缺帧时重置重叠历史，
 缺失区间用静音和短淡变衔接。音高容差、推进边界和缺失时长有对应核心测试。
+
+### PLC 与静音裁剪的实现边界
+
+`simulate()` 的 `sample()` 根据包是否已在缓存中判断源样本可用性。无 40ms 连续
+前视时重置 WSOLA，并直接读取当前块；缺失样本使 `concealed` 增加，再通过
+`fade_out`、`fade_in` 和 `previous_output` 做最长 240 样本的静音衔接。
+正常到达的零值样本仍是可用数据，不会被误记为 PLC。
+
+当前没有能量检测或主动静音裁剪分支。若添加，需要把跳过的源区间、独立裁剪计数
+和事件加入游标提交及回放链路，同时处理 WSOLA 保留尾部和延迟来源追踪；仅删除
+`queue` 元素会制造缺洞，随后仍会补静音。该扩展应独立验证静音误判、裁剪限额、
+有声内容保护、时间连续性与统计分类。
 
 ## 事件回放与试听同步
 
@@ -99,3 +116,9 @@
 文档配置只启用 MyST，不执行 Markdown 中的代码块。C++ 程序构建不依赖文档环境。
 FTXUI、GoogleTest 使用 Conan 锁文件；GStreamer 使用同一系统 SDK 的 core/app/audio。
 验证命令和第三方库插桩范围见[测试](testing.md)。
+
+
+## PLC / Rebuffer 对照
+
+欠载可选择 PLC 持续推进或 Rebuffer 冻结源位置重新蓄水；策略参数、超时边界和
+独立统计口径见[PLC 与重新缓冲](underrun.md)。

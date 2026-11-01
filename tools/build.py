@@ -32,7 +32,7 @@ def flag(name, default="ON"):
 def main():
     action = sys.argv[1] if len(sys.argv) == 2 else "help"
     if action == "help":
-        print("make deps doctor build start compare test fixtures fetch-speech clean asan tsan doc")
+        print("make deps doctor build start compare test fixtures fetch-speech clean asan tsan doc web")
         print("INPUT=assets/real/mandarin.wav OUT=out SCENARIO=phased SEED=42 ARGS='...' ")
         print("MEDIA=OFF TUI=OFF TESTS=ON OFFLINE=ON PROFILE_HOST=default")
         return
@@ -91,7 +91,7 @@ def main():
                     timeout=20)
                 print(element + ": OK")
         return
-    allowed = {"deps", "build", "test", "fixtures", "compare", "start"}
+    allowed = {"deps", "build", "test", "fixtures", "compare", "start", "web"}
     if action not in allowed:
         raise ValueError("Unknown build action")
     folder.mkdir(parents=True, exist_ok=True)
@@ -147,6 +147,12 @@ def main():
         if not media:
             raise ValueError("This action requires MEDIA=ON")
         source = os.environ.get("INPUT") or "assets/real/mandarin.wav"
+        if action == "web":
+            execute([sys.executable, ROOT / "tools/web_server.py", "--binary", binary,
+                     "--input", source, "--output-dir",
+                     Path(os.environ.get("OUT", "out")) / "web", "--port",
+                     os.environ.get("WEB_PORT", "8765")])
+            return
         fixture = ROOT / "assets" / "speech.wav"
         if action == "fixtures":
             fixture.parent.mkdir(exist_ok=True)

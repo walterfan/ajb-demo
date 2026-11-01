@@ -332,4 +332,76 @@ TEST(Metrics, AdaptiveDelayDecompositionWeightsUniqueSourceContributions) {
   EXPECT_NEAR(network / samples, r.summary.played_network_mean_ms, 1e-8);
   EXPECT_NEAR(playout / samples, r.summary.packet_to_output_mean_ms, 1e-8);
 }
+TEST(Rebuffer, WaitsForLateAudioWithoutConsumingSource) {
+  Config c;
+  c.scenario = "constant";
+  const Pcm input(50 * kFrame, 1000);
+  auto trace = make_network(input.size(), c);
+  trace[10].arrival = ms(400);  // Due at 260ms with the small fixed budget.
+  auto plc = simulate(input, trace, c, false, 20);
+  c.underrun_policy = "rebuffer";
+  EXPECT_EQ(make_network(input.size(), c),
+            make_network(input.size(), Config{.scenario = "constant"}));
+  auto result = simulate(input, trace, c, false, 20);
+  EXPECT_GT(plc.summary.counters.plc_samples, 0u);
+  EXPECT_GT(plc.summary.counters.late, 0u);
+  EXPECT_EQ(result.summary.counters.plc_samples, 0u);
+  EXPECT_EQ(result.summary.counters.late, 0u);
+  EXPECT_EQ(result.summary.played_source_samples, input.size());
+  EXPECT_EQ(result.summary.counters.rebuffer_events, 1u);
+  EXPECT_EQ(result.summary.counters.rebuffer_samples, 140 * 48u);
+  EXPECT_EQ(result.duration() - plc.duration(), ms(140));
+  size_t waiting_ticks = 0;
+  for (const auto& tick : result.ticks) {
+    if (tick.action != "rebuffer") continue;
+    ++waiting_ticks;
+    EXPECT_EQ(tick.source, 10u * kFrame);
+    EXPECT_EQ(tick.advance, 0);
+    EXPECT_EQ(tick.concealed, 0);
+    EXPECT_EQ(tick.delays.samples, 0u);
+    EXPECT_TRUE(std::isnan(tick.delays.wait_ms));
+  }
+  EXPECT_EQ(waiting_ticks, 14u);
+}
+TEST(Rebuffer, TimeoutAndTotalBudgetBoundPermanentLoss) {
+  Config c;
+  c.scenario = "constant";
+  c.underrun_policy = "rebuffer";
+  c.rebuffer_timeout_ms = 300;
+  Pcm input(30 * kFrame + 17, 1000);
+  auto trace = make_network(input.size(), c);
+  for (auto& packet : trace) packet.lost = true;
+  auto result = simulate(input, trace, c, false, 20);
+  EXPECT_EQ(result.summary.counters.rebuffer_samples, 5u * kRate);
+  EXPECT_GT(result.summary.counters.rebuffer_timeouts, 0u);
+  EXPECT_EQ(result.summary.counters.plc_samples, input.size());
+  EXPECT_LT(result.duration(), ms(7000));
+  EXPECT_THROW(simulate(input, trace, c, false, 20, [] { return true; }),
+               std::runtime_error);
+}
+TEST(Rebuffer, PermanentGapTimesOutAndContinuesAvailableAudio) {
+  Config c;
+  c.scenario = "constant";
+  c.underrun_policy = "rebuffer";
+  const Pcm input(50 * kFrame, 1000);
+  auto trace = make_network(input.size(), c);
+  trace[10].lost = true;
+  const auto result = simulate(input, trace, c, false, 20);
+  EXPECT_EQ(result.summary.counters.rebuffer_samples, 300u * 48);
+  EXPECT_EQ(result.summary.counters.rebuffer_timeouts, 1u);
+  EXPECT_EQ(result.summary.counters.plc_samples, kFrame);
+  EXPECT_EQ(result.summary.played_source_samples, input.size() - kFrame);
+}
+TEST(Rebuffer, TailCanResumeBelowFullWatermark) {
+  Config c;
+  c.scenario = "constant";
+  c.underrun_policy = "rebuffer";
+  Pcm input(10 * kFrame + 17, 1000);
+  auto trace = make_network(input.size(), c);
+  trace.back().arrival = ms(400);
+  auto result = simulate(input, trace, c, false, 20);
+  EXPECT_EQ(result.summary.played_source_samples, input.size());
+  EXPECT_EQ(result.summary.counters.plc_samples, 0u);
+  EXPECT_EQ(result.summary.counters.rebuffer_timeouts, 0u);
+}
 }  // namespace aca::ajb

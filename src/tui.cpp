@@ -116,7 +116,7 @@ class Lab {
     guide_ =
         Checkbox(tr("关键事件暂停讲解", "Pause at key events"), &teaching_);
     timeline_ =
-        Slider(tr("实验时间(ms): ", "Time(ms): "), &scrub_ms_, 0, 305000, 1000);
+        Slider(tr("实验时间(ms): ", "Time(ms): "), &scrub_ms_, 0, 310000, 1000);
     navigation_ = Container::Vertical(
         {tabs_, Container::Horizontal({start, restart, edit, quit}), timeline_,
          guide_});
@@ -354,6 +354,12 @@ class Lab {
                                     fixed,
                                     "--scenario",
                                     scene_names_.at(scene_),
+                                    "--underrun-policy",
+                                    options_.config.underrun_policy,
+                                    "--rebuffer-resume-ms",
+                                    std::to_string(options_.config.rebuffer_resume_ms),
+                                    "--rebuffer-timeout-ms",
+                                    std::to_string(options_.config.rebuffer_timeout_ms),
                                     "--seed",
                                     fields_[0],
                                     "--small-buffer-ms",
@@ -633,6 +639,8 @@ class Lab {
          text(tr("连续水位 ", "Contiguous ") + decimal(v.tick.level_ms) + "ms"),
          text("PLC " + decimal(v.tick.cumulative.plc_samples / 48.0) + "ms / " +
               v.tick.action),
+         text("Rebuffer " +
+              decimal(v.tick.cumulative.rebuffer_samples / 48.0) + "ms"),
          text(tr("源位置 ", "Source ") + decimal(v.source_cursor / 48000.0, 3) +
               "s")});
     return content | border | flex;
@@ -699,6 +707,9 @@ class Lab {
         : view.tick.action == "plc"
             ? tr("当前所需区间缺失，补静音并推进游标",
                  "Required interval missing: PLC and advance")
+        : view.tick.action == "rebuffer"
+            ? tr("重新蓄水：冻结源位置，等待可用音频",
+                 "Rebuffer: hold source, wait for audio")
         : view.tick.action == "startup"
             ? tr("预缓冲等待；不计为欠载", "Startup waiting; not an underrun")
         : view.tick.action == "drain"
