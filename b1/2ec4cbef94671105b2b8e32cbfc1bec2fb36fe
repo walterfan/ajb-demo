@@ -1,0 +1,124 @@
+doc/audio-processing.md
+  s_7fec0aeb8a0a8d::t_5a5c8ad5b94a96 184-185
+  s_7fec0aeb8a0a8d::t_e20ca64304de32 1-94,98-112,114-118,120-183,186-192
+  s_7fec0aeb8a0a8d::t_c5b7354e53973d 95-97,113,119
+web/index.html
+  s_7fec0aeb8a0a8d::t_7080d2792319c8 40-41,56
+  s_7fec0aeb8a0a8d::t_e613c05ab29222 52
+  s_7fec0aeb8a0a8d::t_ad97a07ba6d1be 9
+  s_7fec0aeb8a0a8d::t_9d754eb7714b57 39,42-45,66
+  s_7fec0aeb8a0a8d::t_a7d8b798d5e5b6 1-8,10-32,34,37,46-51,53-55,57-65,67-69,71-77
+  s_7fec0aeb8a0a8d::t_781619590c6760 33,35-36,38,70
+doc/index.md
+  s_7fec0aeb8a0a8d::t_e20ca64304de32 24
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 25
+  s_7fec0aeb8a0a8d::t_b4c8867a93a5d4 14
+doc/implementation.md
+  s_7fec0aeb8a0a8d::t_e20ca64304de32 64-66,77-87
+  s_7fec0aeb8a0a8d::t_b4c8867a93a5d4 16
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 119-124
+  s_7fec0aeb8a0a8d::t_c5b7354e53973d 48-50
+  s_7fec0aeb8a0a8d::t_6ac94047e09af5 88
+tools/web_test.py
+  s_7fec0aeb8a0a8d::t_fb1e6a5264fb95 1-75,77-80,83-90,93-97,123-141,143-168
+  s_7fec0aeb8a0a8d::t_8c0e1ff7d53366 91-92,142
+  s_7fec0aeb8a0a8d::t_ad97a07ba6d1be 76,82
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 98-122
+  s_7fec0aeb8a0a8d::t_485a0aa48e1ebc 81
+doc/web-gui.md
+  s_7fec0aeb8a0a8d::t_b4c8867a93a5d4 1-28,48-99
+  s_7fec0aeb8a0a8d::t_7080d2792319c8 29-47
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 100-105
+tests/core_test.cpp
+  s_7fec0aeb8a0a8d::t_0f5c0f4ffb7a78 340,355-373
+  s_7fec0aeb8a0a8d::t_c5b7354e53973d 336-339,342,381-394,396-398,400,406
+  s_7fec0aeb8a0a8d::t_08ac3d319561f5 343-344,379-380
+  s_7fec0aeb8a0a8d::t_663ce7b3542c9e 335,341,345-354,374-378,395,399,401-405
+doc/references.md
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 18
+  s_7fec0aeb8a0a8d::t_e20ca64304de32 23-25
+web/styles.css
+  s_7fec0aeb8a0a8d::t_16b8b526de851c 9
+  s_7fec0aeb8a0a8d::t_a7d8b798d5e5b6 1-8,12
+  s_7fec0aeb8a0a8d::t_7080d2792319c8 11
+  s_7fec0aeb8a0a8d::t_9d754eb7714b57 10
+  s_7fec0aeb8a0a8d::t_c3999d5a5944d6 13-14
+tools/web_server.py
+  s_7fec0aeb8a0a8d::t_ad97a07ba6d1be 182,249-252
+  s_7fec0aeb8a0a8d::t_577e2b17c7891c 1-37,39-133,135-136,138-143,145-151,154-180,183-231,233-235,237-248,253-310
+  s_7fec0aeb8a0a8d::t_485a0aa48e1ebc 181
+  s_7fec0aeb8a0a8d::t_fb1e6a5264fb95 137,152-153,232
+  s_7fec0aeb8a0a8d::t_16b8b526de851c 236
+  s_7fec0aeb8a0a8d::t_8a6b24ce853eb2 38,134,144
+Makefile
+  s_7fec0aeb8a0a8d::t_dc340344e3f983 17,20-21,28-29
+doc/design.md
+  s_7fec0aeb8a0a8d::t_7080d2792319c8 60-83
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 152-155
+  s_7fec0aeb8a0a8d::t_e20ca64304de32 126-128,156-159
+tests/app_test.cpp
+  s_7fec0aeb8a0a8d::t_08ac3d319561f5 15
+  s_7fec0aeb8a0a8d::t_8c0e1ff7d53366 158
+  s_7fec0aeb8a0a8d::t_3a7626474fd786 16-17
+doc/metrics.md
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 64-69
+doc/underrun.md
+  s_7fec0aeb8a0a8d::t_c5b7354e53973d 58-60
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 1-57
+src/core.cpp
+  s_7fec0aeb8a0a8d::t_c5b7354e53973d 294-295
+  s_7fec0aeb8a0a8d::t_0f5c0f4ffb7a78 423
+  s_7fec0aeb8a0a8d::t_08ac3d319561f5 34-38,412-420,424-439
+  s_7fec0aeb8a0a8d::t_b58cb827b10885 32-33,310-311,399-411,421-422,440-444
+web/icon.svg
+  s_7fec0aeb8a0a8d::t_ad97a07ba6d1be 1-4
+src/tui.cpp
+  s_7fec0aeb8a0a8d::t_08ac3d319561f5 711-712
+  s_7fec0aeb8a0a8d::t_c5b7354e53973d 357-362,642-643
+  s_7fec0aeb8a0a8d::t_d3d11d227d1e0b 119,710
+tests/replay_test.cpp
+  s_7fec0aeb8a0a8d::t_08ac3d319561f5 142-143
+  s_7fec0aeb8a0a8d::t_0f5c0f4ffb7a78 138-139
+  s_7fec0aeb8a0a8d::t_4638efc45345b6 130-137,140-141,144-146
+tools/build.py
+  s_7fec0aeb8a0a8d::t_dc340344e3f983 35,94,150-155
+web/app.js
+  s_7fec0aeb8a0a8d::t_7080d2792319c8 64,66-73,168-173,354
+  s_7fec0aeb8a0a8d::t_8c0e1ff7d53366 79
+  s_7fec0aeb8a0a8d::t_9d754eb7714b57 154-156,167
+  s_7fec0aeb8a0a8d::t_fb1e6a5264fb95 244-249,335,396
+  s_7fec0aeb8a0a8d::t_63c5bf04d08091 1-7,9-51,53-63,65,74-77,80-114,116-153,157-160,174-243,250-284,287-311,313-329,331-334,336-353,355-395,397-405
+  s_7fec0aeb8a0a8d::t_e613c05ab29222 285-286
+  s_7fec0aeb8a0a8d::t_b9760199ecbc17 8,52,78,115,161-166,312,330
+src/app.cpp
+  s_7fec0aeb8a0a8d::t_8c0e1ff7d53366 312-313
+  s_7fec0aeb8a0a8d::t_08ac3d319561f5 54-55,63-66,111-116,161-162,248-249,263-265,272-275,304-307
+README.md
+  s_7fec0aeb8a0a8d::t_b4c8867a93a5d4 4,19-20,25-26
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 37
+doc/testing.md
+  s_7fec0aeb8a0a8d::t_b4c8867a93a5d4 14-15
+  s_7fec0aeb8a0a8d::t_0a9973c00c7068 26-31
+include/aca/ajb/core.h
+  s_7fec0aeb8a0a8d::t_a72f5e22277010 31-32,93
+pyproject.toml
+  s_7fec0aeb8a0a8d::t_40e61007d671cb 13-18
+uv.lock
+  s_7fec0aeb8a0a8d::t_9b8bc48c77d289 18-23,33-38,49-79,245-253,301-317,327-335,544-555,574-725,938-971,980-992
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b12ec4cbef94671105b2b8e32cbfc1bec2fb36fe",
+  "prompts": {},
+  "sessions": {
+    "s_7fec0aeb8a0a8d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19248-49b2-7490-9f73-7d0bc3689b68",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Walter Fan <walter.fan@zoom.us>"
+    }
+  }
+}
